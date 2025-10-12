@@ -5,7 +5,12 @@ dotenv.config();
 
 // Create email transporter
 const createTransporter = () => {
-  return nodemailer.createTransporter({
+  // Check if email credentials are configured
+  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
+    throw new Error('Email credentials not configured. Please set EMAIL_USER and EMAIL_PASSWORD environment variables.');
+  }
+
+  return nodemailer.createTransport({
     service: 'gmail',
     auth: {
       user: process.env.EMAIL_USER,
@@ -139,6 +144,8 @@ export const sendContactEmail = async (req, res) => {
   }
 };
 
+
+
 // Get contact information
 export const getContactInfo = async (req, res) => {
   try {
@@ -171,3 +178,5 @@ export const getContactInfo = async (req, res) => {
     });
   }
 };
+
+
