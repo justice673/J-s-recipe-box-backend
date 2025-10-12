@@ -33,4 +33,21 @@ const recipeSchema = new mongoose.Schema({
   reviewCount: { type: Number, default: 0 }
 }, { timestamps: true });
 
+// Virtual fields for frontend compatibility
+recipeSchema.virtual('rating').get(function() {
+  return this.averageRating || 0;
+});
+
+// Use transform to map fields for JSON output instead of conflicting virtual
+recipeSchema.set('toJSON', { 
+  virtuals: true,
+  transform: function(doc, ret) {
+    // Map reviewCount to reviews for frontend compatibility
+    ret.reviews = ret.reviewCount || 0;
+    return ret;
+  }
+});
+
+recipeSchema.set('toObject', { virtuals: true });
+
 export default mongoose.model('Recipe', recipeSchema);

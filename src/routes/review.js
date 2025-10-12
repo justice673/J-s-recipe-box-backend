@@ -14,7 +14,10 @@ const router = express.Router();
 // Add a review to a recipe
 router.post('/:recipeId', authenticateToken, addReview);
 
-// Get reviews for a recipe
+// Get reviews for a recipe (matching frontend expectation)
+router.get('/:recipeId', getRecipeReviews);
+
+// Alternative route for getting reviews (for compatibility)
 router.get('/recipe/:recipeId', getRecipeReviews);
 
 // Get user's reviews

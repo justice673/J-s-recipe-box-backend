@@ -39,9 +39,10 @@ export const addReview = async (req, res) => {
     await recipe.save();
 
     // Populate user data for response
-    await review.populate('user', 'fullName avatar');
+    await review.populate('user', 'fullName email avatar');
 
     res.status(201).json({
+      success: true,
       message: 'Review added successfully',
       review
     });
@@ -58,19 +59,15 @@ export const getRecipeReviews = async (req, res) => {
     const { page = 1, limit = 10, sort = '-createdAt' } = req.query;
 
     const reviews = await Review.find({ recipe: recipeId })
-      .populate('user', 'fullName avatar')
+      .populate('user', 'fullName email avatar')
       .sort(sort)
       .limit(limit * 1)
       .skip((page - 1) * limit);
 
     const totalReviews = await Review.countDocuments({ recipe: recipeId });
 
-    res.json({
-      reviews,
-      totalReviews,
-      currentPage: page,
-      totalPages: Math.ceil(totalReviews / limit)
-    });
+    // Return array directly to match frontend expectation: Array.isArray(data) ? data : data.reviews || []
+    res.json(reviews);
   } catch (error) {
     console.error('Error fetching reviews:', error);
     res.status(500).json({ message: 'Server error.' });
