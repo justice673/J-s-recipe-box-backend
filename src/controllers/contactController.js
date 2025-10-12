@@ -3,6 +3,10 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
+// Alternative: SendGrid configuration (uncomment if Gmail fails)
+// const sgMail = require('@sendgrid/mail');
+// sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+
 // Create email transporter
 const createTransporter = () => {
   // Check if email credentials are configured
@@ -12,10 +16,15 @@ const createTransporter = () => {
 
   return nodemailer.createTransport({
     service: 'gmail',
+    port: 587,
+    secure: false, // Use STARTTLS
     auth: {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASSWORD, // Use App Password for Gmail
     },
+    connectionTimeout: 60000, // 60 seconds
+    greetingTimeout: 30000,   // 30 seconds
+    socketTimeout: 60000,     // 60 seconds
   });
 };
 
@@ -137,6 +146,24 @@ export const sendContactEmail = async (req, res) => {
 
   } catch (error) {
     console.error('Contact form error:', error);
+    
+    // Handle specific SMTP connection issues
+    if (error.code === 'ETIMEDOUT' || error.code === 'ECONNECTION') {
+      // Log the contact attempt for manual follow-up
+      console.log('=== CONTACT FORM SUBMISSION (Email Failed) ===');
+      console.log('Name:', req.body.name);
+      console.log('Email:', req.body.email);
+      console.log('Subject:', req.body.subject || 'No subject');
+      console.log('Message:', req.body.message);
+      console.log('Timestamp:', new Date().toISOString());
+      console.log('===============================================');
+      
+      return res.status(200).json({
+        success: true,
+        message: 'Message received! Due to email service limitations, we\'ll respond directly to your email address within 24 hours.'
+      });
+    }
+    
     res.status(500).json({
       success: false,
       message: 'Failed to send message. Please try again later.'
