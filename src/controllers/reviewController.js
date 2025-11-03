@@ -58,13 +58,17 @@ export const getRecipeReviews = async (req, res) => {
     const { recipeId } = req.params;
     const { page = 1, limit = 10, sort = '-createdAt' } = req.query;
 
+    console.log('Fetching reviews for recipeId:', recipeId);
+
     const reviews = await Review.find({ recipe: recipeId })
       .populate('user', 'fullName email avatar')
       .sort(sort)
-      .limit(limit * 1)
-      .skip((page - 1) * limit);
+      .limit(parseInt(limit))
+      .skip((parseInt(page) - 1) * parseInt(limit));
 
     const totalReviews = await Review.countDocuments({ recipe: recipeId });
+
+    console.log(`Found ${reviews.length} reviews for recipe ${recipeId} (total: ${totalReviews})`);
 
     // Return array directly to match frontend expectation: Array.isArray(data) ? data : data.reviews || []
     res.json(reviews);
