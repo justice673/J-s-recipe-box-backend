@@ -1,6 +1,16 @@
 import Recipe from '../models/Recipe.js';
 import User from '../models/User.js';
 
+// Helper function to normalize images array
+const normalizeRecipeImages = (recipe) => {
+  const recipeObj = recipe.toObject ? recipe.toObject() : recipe;
+  // If images array is empty but image field exists, populate images array
+  if ((!recipeObj.images || recipeObj.images.length === 0) && recipeObj.image) {
+    recipeObj.images = [recipeObj.image];
+  }
+  return recipeObj;
+};
+
 // Create a new recipe
 export const createRecipe = async (req, res) => {
   try {
@@ -14,7 +24,8 @@ export const createRecipe = async (req, res) => {
     
     const recipe = new Recipe(recipeData);
     await recipe.save();
-    res.status(201).json({ message: 'Recipe created successfully.', recipe });
+    const normalizedRecipe = normalizeRecipeImages(recipe);
+    res.status(201).json({ message: 'Recipe created successfully.', recipe: normalizedRecipe });
   } catch (err) {
     console.error('Create recipe error:', err);
     res.status(500).json({ message: 'Server error.' });
@@ -44,7 +55,9 @@ export const getRecipes = async (req, res) => {
       .skip(skip)
       .limit(parseInt(limit))
       .sort({ createdAt: -1 });
-    res.json({ recipes, total, page: parseInt(page), pages: Math.ceil(total / limit) });
+    // Normalize images array for all recipes
+    const normalizedRecipes = recipes.map(normalizeRecipeImages);
+    res.json({ recipes: normalizedRecipes, total, page: parseInt(page), pages: Math.ceil(total / limit) });
   } catch (err) {
     console.error('Get recipes error:', err);
     res.status(500).json({ message: 'Server error.' });
@@ -56,7 +69,8 @@ export const getRecipeById = async (req, res) => {
   try {
     const recipe = await Recipe.findById(req.params.id).populate('user', 'fullName email');
     if (!recipe) return res.status(404).json({ message: 'Recipe not found.' });
-    res.json(recipe);
+    const normalizedRecipe = normalizeRecipeImages(recipe);
+    res.json(normalizedRecipe);
   } catch (err) {
     console.error('Get recipe by ID error:', err);
     res.status(500).json({ message: 'Server error.' });
@@ -79,7 +93,8 @@ export const updateRecipe = async (req, res) => {
       { new: true }
     );
     if (!recipe) return res.status(404).json({ message: 'Recipe not found or unauthorized.' });
-    res.json({ message: 'Recipe updated.', recipe });
+    const normalizedRecipe = normalizeRecipeImages(recipe);
+    res.json({ message: 'Recipe updated.', recipe: normalizedRecipe });
   } catch (err) {
     console.error('Update recipe error:', err);
     res.status(500).json({ message: 'Server error.' });
@@ -145,7 +160,8 @@ export const getPopularRecipes = async (req, res) => {
       .sort({ [sortField]: -1 })
       .limit(parseInt(limit))
       .populate('user', 'fullName email');
-    res.json(recipes);
+    const normalizedRecipes = recipes.map(normalizeRecipeImages);
+    res.json(normalizedRecipes);
   } catch (err) {
     console.error('Get popular recipes error:', err);
     res.status(500).json({ message: 'Server error.' });
@@ -156,7 +172,8 @@ export const getPopularRecipes = async (req, res) => {
 export const getUserRecipes = async (req, res) => {
   try {
     const recipes = await Recipe.find({ user: req.params.userId }).populate('user', 'fullName email');
-    res.json(recipes);
+    const normalizedRecipes = recipes.map(normalizeRecipeImages);
+    res.json(normalizedRecipes);
   } catch (err) {
     console.error('Get user recipes error:', err);
     res.status(500).json({ message: 'Server error.' });
